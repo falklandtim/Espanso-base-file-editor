@@ -2,6 +2,8 @@
 
 A visual editor for managing your [Espanso](https://espanso.org/) YAML configuration files. No installation required - just download and open in your browser!
 
+DISCLOSURE: This html file and README file was made with Claude AI. I am not a coder 😂
+
 ![Espanso Editor](https://img.shields.io/badge/espanso-editor-blue)
 ![No Dependencies](https://img.shields.io/badge/dependencies-none-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
