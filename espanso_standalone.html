@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espanso Editor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-size: 2rem;
+      color: #1e293b;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    button, .button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+    .btn-warning:hover {
+      background: #d97706;
+    }
+    button:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #64748b;
+    }
+    .match-item {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 1rem;
+      align-items: start;
+    }
+    .match-item.duplicate {
+      background: #fef2f2;
+      border: 2px solid #fca5a5;
+    }
+    .match-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+    .match-trigger {
+      font-family: monospace;
+      color: #3b82f6;
+      font-size: 0.875rem;
+    }
+    .match-trigger.duplicate {
+      color: #dc2626;
+      font-weight: bold;
+    }
+    .match-replace {
+      color: #334155;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .icon-btn {
+      padding: 0.5rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      color: #64748b;
+    }
+    .icon-btn:hover {
+      background: #e2e8f0;
+    }
+    .icon-btn.delete:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #334155;
+    }
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+    .form-group textarea {
+      font-family: monospace;
+      font-size: 0.875rem;
+      resize: vertical;
+    }
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    .alert-danger {
+      background: #fef2f2;
+      border: 2px solid #fca5a5;
+      color: #991b1b;
+    }
+    .preview {
+      background: white;
+      border: 2px solid #c084fc;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 0.75rem;
+    }
+    .preview-content {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Espanso Match Editor</h1>
+      <p class="subtitle">Manage your text expansion shortcuts easily</p>
+      
+      <div class="button-group">
+        <label class="button btn-primary">
+          📤 <span id="uploadLabel">Upload Base YAML</span>
+          <input type="file" id="fileInput" accept=".yml,.yaml">
+        </label>
+        <button class="btn-success" id="downloadBtn" disabled>
+          💾 Download YAML
+        </button>
+      </div>
+      
+      <div id="emptyState" class="empty-state">
+        <p style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">
+          Upload your base.yml file to get started
+        </p>
+        <p style="font-size: 0.875rem;">
+          Then you can merge additional YAML files or add matches manually
+        </p>
+      </div>
+    </div>
+
+    <div id="mainContent" class="hidden">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.25rem; color: #1e293b;">
+            Your Matches (<span id="matchCount">0</span>)
+          </h2>
+          <button class="btn-primary" id="addBtn">
+            ➕ Add New
+          </button>
+        </div>
+        
+        <div id="duplicateAlert" class="hidden alert alert-danger">
+          <div style="font-weight: 600; margin-bottom: 0.5rem;">
+            ⚠️ Duplicate Triggers Found!
+          </div>
+          <p style="font-size: 0.875rem; margin-bottom: 1rem;">
+            You have <span id="dupeCount">0</span> triggers that appear multiple times.
+          </p>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-danger" id="reviewDupesBtn">Review & Remove Duplicates</button>
+            <button class="btn-warning" id="autoRemoveBtn">Auto-Remove (Keep First)</button>
+          </div>
+        </div>
+
+        <div id="duplicateReview" class="hidden">
+          <!-- Duplicates will be inserted here -->
+        </div>
+
+        <div id="editForm" class="hidden" style="background: #f1f5f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 2px solid #3b82f6;">
+          <h3 style="margin-bottom: 1rem; color: #334155;">
+            <span id="formTitle">Add New Match</span>
+          </h3>
+          <div class="form-group">
+            <label>Trigger</label>
+            <input type="text" id="triggerInput" placeholder="e.g., ;em or :espanso">
+          </div>
+          <div class="form-group">
+            <label>Replace With</label>
+            <textarea id="replaceInput" rows="4" placeholder="The text that will replace the trigger"></textarea>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-success" id="saveBtn">💾 Save</button>
+            <button style="background: #cbd5e1; color: #334155;" id="cancelBtn">✖️ Cancel</button>
+          </div>
+        </div>
+
+        <div id="matchList">
+          <!-- Matches will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let matches = [];
+    let editingIndex = null;
+    let previewIndex = null;
+
+    const parseYAML = (content) => {
+      const lines = content.split('\n');
+      const parsedMatches = [];
+      let currentMatch = null;
+      let inReplace = false;
+      let replaceContent = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        if (line.trim().startsWith('- trigger:')) {
+          if (currentMatch && currentMatch.trigger) {
+            if (replaceContent.length > 0) {
+              currentMatch.replace = replaceContent.join('\n');
+            }
+            parsedMatches.push(currentMatch);
+          }
+          currentMatch = { trigger: '', replace: '' };
+          replaceContent = [];
+          inReplace = false;
+          
+          const triggerMatch = line.match(/trigger:\s*["']?(.+?)["']?\s*$/);
+          if (triggerMatch) {
+            currentMatch.trigger = triggerMatch[1];
+          }
+        }
+        else if (line.trim().startsWith('replace:') && currentMatch) {
+          inReplace = true;
+          const replaceMatch = line.match(/replace:\s*["'](.*)["']?\s*$/);
+          if (replaceMatch) {
+            const content = replaceMatch[1];
+            if (content.endsWith('"') || content.endsWith("'")) {
+              currentMatch.replace = content.slice(0, -1)
+                .replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\r/g, '\r')
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'")
+                .replace(/\\\\/g, '\\')
+                .replace(/\\/g, '');
+              inReplace = false;
+            } else {
+              replaceContent.push(content);
+            }
+          }
+        }
+        else if (inReplace && currentMatch) {
+          const trimmed = line.trim();
+          if (trimmed && !trimmed.startsWith('-') && !trimmed.startsWith('vars:')) {
+            replaceContent.push(line.replace(/^\s{4}/, ''));
+          } else if (trimmed.startsWith('-') || trimmed.startsWith('vars:')) {
+            currentMatch.replace = replaceContent.join('\n')
+              .replace(/^['"]|['"]$/g, '')
+              .replace(/\\n/g, '\n')
+              .replace(/\\t/g, '\t')
+              .replace(/\\r/g, '\r')
+              .replace(/\\"/g, '"')
+              .replace(/\\'/g, "'")
+              .replace(/\\\\/g, '\\')
+              .replace(/\\/g, '');
+            inReplace = false;
+            replaceContent = [];
+          }
+        }
+      }
+
+      if (currentMatch && currentMatch.trigger) {
+        if (replaceContent.length > 0) {
+          currentMatch.replace = replaceContent.join('\n')
+            .replace(/^['"]|['"]$/g, '')
+            .replace(/\\n/g, '\n')
+            .replace(/\\t/g, '\t')
+            .replace(/\\r/g, '\r')
+            .replace(/\\"/g, '"')
+            .replace(/\\'/g, "'")
+            .replace(/\\\\/g, '\\')
+            .replace(/\\/g, '');
+        }
+        parsedMatches.push(currentMatch);
+      }
+
+      return parsedMatches.filter(m => m.trigger && m.replace);
+    };
+
+    const generateYAML = () => {
+      let yaml = `# espanso match file
+
+# For a complete introduction, visit the official docs at: https://espanso.org/docs/
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches:
+`;
+
+      matches.forEach(match => {
+        const escapedTrigger = match.trigger.replace(/"/g, '\\"');
+        const escapedReplace = match.replace
+          .replace(/\\/g, '\\\\')
+          .replace(/"/g, '\\"')
+          .replace(/\n/g, '\\n')
+          .replace(/\t/g, '\\t');
+        
+        yaml += `  - trigger: "${escapedTrigger}"\n`;
+        yaml += `    replace: "${escapedReplace}"\n`;
+      });
+
+      return yaml;
+    };
+
+    const findDuplicates = () => {
+      const triggerCounts = {};
+      const dupes = [];
+      
+      matches.forEach((match, index) => {
+        if (!triggerCounts[match.trigger]) {
+          triggerCounts[match.trigger] = [];
+        }
+        triggerCounts[match.trigger].push(index);
+      });
+      
+      Object.entries(triggerCounts).forEach(([trigger, indices]) => {
+        if (indices.length > 1) {
+          dupes.push({ trigger, indices });
+        }
+      });
+      
+      return dupes;
+    };
+
+    const render = () => {
+      const duplicates = findDuplicates();
+      
+      document.getElementById('matchCount').textContent = matches.length;
+      document.getElementById('downloadBtn').disabled = matches.length === 0;
+      
+      if (matches.length === 0) {
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('mainContent').classList.add('hidden');
+        document.getElementById('uploadLabel').textContent = 'Upload Base YAML';
+        return;
+      }
+      
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('mainContent').classList.remove('hidden');
+      document.getElementById('uploadLabel').textContent = 'Merge Another YAML';
+      
+      // Duplicates alert
+      if (duplicates.length > 0) {
+        document.getElementById('duplicateAlert').classList.remove('hidden');
+        document.getElementById('dupeCount').textContent = duplicates.length;
+      } else {
+        document.getElementById('duplicateAlert').classList.add('hidden');
+      }
+      
+      // Match list
+      const matchList = document.getElementById('matchList');
+      matchList.innerHTML = '';
+      
+      matches.forEach((match, index) => {
+        const isDuplicate = duplicates.some(d => d.indices.includes(index));
+        
+        const item = document.createElement('div');
+        item.className = 'match-item' + (isDuplicate ? ' duplicate' : '');
+        
+        item.innerHTML = `
+          <div>
+            <div class="match-label">Trigger</div>
+            <div class="match-trigger ${isDuplicate ? 'duplicate' : ''}">
+              ${isDuplicate ? '⚠️ ' : ''}${escapeHtml(match.trigger)}
+            </div>
+          </div>
+          <div>
+            <div class="match-label">Replace</div>
+            <div class="match-replace">
+              ${escapeHtml(match.replace.length > 100 ? match.replace.substring(0, 100) + '...' : match.replace)}
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.25rem;">
+            <button class="icon-btn" onclick="previewMatch(${index})" title="Preview">👁️</button>
+            <button class="icon-btn" onclick="editMatch(${index})" title="Edit">✏️</button>
+            <button class="icon-btn delete" onclick="deleteMatch(${index})" title="Delete">🗑️</button>
+          </div>
+        `;
+        
+        matchList.appendChild(item);
+        
+        // Preview
+        if (previewIndex === index) {
+          const preview = document.createElement('div');
+          preview.className = 'preview';
+          preview.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <strong>Preview: ${escapeHtml(match.trigger)}</strong>
+              <button class="icon-btn" onclick="closePreview()">✖️</button>
+            </div>
+            <div class="preview-content">${escapeHtml(match.replace)}</div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.75rem;">
+              This is how the text will appear when you use the trigger
+            </div>
+          `;
+          matchList.appendChild(preview);
+        }
+      });
+    };
+
+    const escapeHtml = (text) => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
+
+    // File upload
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target.result;
+          const parsed = parseYAML(content);
+          
+          if (matches.length === 0) {
+            matches = parsed;
+          } else {
+            const existingTriggers = new Set(matches.map(m => m.trigger));
+            const newMatches = parsed.filter(m => !existingTriggers.has(m.trigger));
+            const dupes = parsed.filter(m => existingTriggers.has(m.trigger));
+            
+            matches = [...matches, ...newMatches];
+            
+            if (dupes.length > 0) {
+              alert(`Merged successfully!\n\nAdded ${newMatches.length} new matches.\nSkipped ${dupes.length} duplicates: ${dupes.map(d => d.trigger).join(', ')}`);
+            } else {
+              alert(`Merged successfully! Added ${newMatches.length} new matches.`);
+            }
+          }
+          
+          render();
+        };
+        reader.readAsText(file);
+      }
+      e.target.value = '';
+    });
+
+    // Download
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const yaml = generateYAML();
+      const blob = new Blob([yaml], { type: 'text/yaml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'base.yml';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // Add button
+    document.getElementById('addBtn').addEventListener('click', () => {
+      editingIndex = null;
+      document.getElementById('formTitle').textContent = 'Add New Match';
+      document.getElementById('triggerInput').value = '';
+      document.getElementById('replaceInput').value = '';
+      document.getElementById('editForm').classList.remove('hidden');
+    });
+
+    // Save button
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const trigger = document.getElementById('triggerInput').value;
+      const replace = document.getElementById('replaceInput').value;
+      
+      if (trigger && replace) {
+        if (editingIndex !== null) {
+          matches[editingIndex] = { trigger, replace };
+        } else {
+          matches.push({ trigger, replace });
+        }
+        
+        document.getElementById('editForm').classList.add('hidden');
+        editingIndex = null;
+        render();
+      }
+    });
+
+    // Cancel button
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      document.getElementById('editForm').classList.add('hidden');
+      editingIndex = null;
+    });
+
+    // Auto-remove duplicates
+    document.getElementById('autoRemoveBtn').addEventListener('click', () => {
+      const seen = new Set();
+      matches = matches.filter(match => {
+        if (seen.has(match.trigger)) {
+          return false;
+        }
+        seen.add(match.trigger);
+        return true;
+      });
+      render();
+    });
+
+    // Global functions
+    window.editMatch = (index) => {
+      editingIndex = index;
+      document.getElementById('formTitle').textContent = 'Edit Match';
+      document.getElementById('triggerInput').value = matches[index].trigger;
+      document.getElementById('replaceInput').value = matches[index].replace;
+      document.getElementById('editForm').classList.remove('hidden');
+    };
+
+    window.deleteMatch = (index) => {
+      if (confirm('Delete this match?')) {
+        matches.splice(index, 1);
+        render();
+      }
+    };
+
+    window.previewMatch = (index) => {
+      previewIndex = index;
+      render();
+    };
+
+    window.closePreview = () => {
+      previewIndex = null;
+      render();
+    };
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
