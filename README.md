@@ -22,7 +22,7 @@ DISCLOSURE: This html file and README file was made with Claude AI. I am not a c
 ## 🚀 Quick Start
 
 ### Option 1: Download and Use
-1. Download `espanso-editor.html` from this repository
+1. Download `espanso_standalone.html` from this repository
 2. Double-click the file to open in your browser
 3. Click "Upload Base YAML" and select your Espanso `base.yml` file
 4. Edit, add, or remove matches as needed
